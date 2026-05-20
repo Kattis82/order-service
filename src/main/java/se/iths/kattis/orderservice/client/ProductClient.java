@@ -32,7 +32,7 @@ public class ProductClient {
             // ParameterizedTypeReference behövs när man förväntar sig en lista som svar
             // annars vet inte Jackson vilken typ objekten i listan ska deserialiseras till
             return productRestClient.post()
-                    .uri("products/stock/decrease")
+                    .uri("/products/stock/decrease")
                     // JWT skickas vidare så product-service vet att anropet är auktoriserat
                     .header("Authorization", bearerToken)
                     .body(items)
@@ -49,6 +49,6 @@ public class ProductClient {
                     exception.getStatusCode(), "Fel från product-service: "
                     + exception.getResponseBodyAsString());
         }
-        
+
     }
 }
