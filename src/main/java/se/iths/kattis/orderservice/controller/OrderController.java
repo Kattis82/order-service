@@ -6,10 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import se.iths.kattis.orderservice.dto.CreateOrderRequest;
 import se.iths.kattis.orderservice.dto.OrderResponse;
 import se.iths.kattis.orderservice.service.OrderService;
@@ -27,6 +24,8 @@ public class OrderController {
     // tar emot en POST-request för att skapa en ny order
     // @Valid aktiverar valideringen på CreateOrderRequest
     // @AuthenticationPrincipal Jwt jwt = ger tillgång till JWT-token
+    // @ResponseStatus = för att swagger ska förstå att 201 förväntas
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(
             @Valid @RequestBody CreateOrderRequest orderRequest,
