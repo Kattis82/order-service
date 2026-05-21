@@ -19,6 +19,9 @@ public interface OrderMapper {
     @Mapping(target = "order", ignore = true)
     OrderItem toOrderItem(ProductInfoResponse productInfoResponse);
 
+    // mappar OrderItem till ProductInfoResponse för att kunna bygga OrderResponse
+    ProductInfoResponse toProductInfoResponse(OrderItem orderItem);
+
     // konverterar Order (entitet) till OrderResponse (DTO ut)
     // MapStruct hittar automatiskt matchande fält eftersom de heter likadant
     OrderResponse toOrderResponse(Order order);
