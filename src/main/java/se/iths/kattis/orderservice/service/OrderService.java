@@ -9,6 +9,7 @@ import se.iths.kattis.orderservice.dto.ProductInfoResponse;
 import se.iths.kattis.orderservice.mapper.OrderMapper;
 import se.iths.kattis.orderservice.model.Order;
 import se.iths.kattis.orderservice.model.OrderItem;
+import se.iths.kattis.orderservice.publisher.OrderPublisher;
 import se.iths.kattis.orderservice.repository.OrderRepository;
 
 import java.math.BigDecimal;
@@ -24,13 +25,19 @@ public class OrderService {
     private final OrderMapper orderMapper;
     // klient som anropar product-service via REST
     private final ProductClient productClient;
+    // publisher som skickar orderbekräftelse till RabbitMQ-kön efter att ordern sparats
+    // email-service tar emot meddelandet och skickar bekräftelsemail till kunden
+    private final OrderPublisher orderPublisher;
 
 
     // metod som skapar en ny order
+    // orderRequest innehåller produktlistan man får in
+    // bearerToken skickas vidare till product-service för JWT-validering
+    // customerName är kundens mejladress hämtad från JWT
     public OrderResponse createOrder(
-            CreateOrderRequest orderRequest,  // tar emot request från controllern,
-            String bearerToken, // tar emot bearer-token från JWT och
-            String customerName) {  // tar emot kundens mailadress
+            CreateOrderRequest orderRequest,
+            String bearerToken,
+            String customerName) {
 
         // skickar produktlistan till ProductClient
         // CreateOrderRequest innehåller List<ProductStockRequest>
@@ -75,12 +82,15 @@ public class OrderService {
         // eftersom cascade = ALL sparas även alla OrderItems automatiskt
         Order savedOrder = orderRepository.save(order);
 
-        // läggas till här sen = skicka meddelande till RabbitMQ för email-service
-        // ska göras här efter att ordern sparats i databasen
+        // konverterar till OrderResponse och återanvänder den både för
+        // RabbitMQ-meddelandet och svaret tillbaka
+        OrderResponse orderResponse = orderMapper.toOrderResponse(savedOrder);
 
+        // skickar orderbekräftelsen till kön (RabbitMQ för email-service)
+        orderPublisher.publishOrderConfirmation(orderResponse);
 
-        // konverterar den sparade Order-entiteten till OrderResponse och returnerar till controllern
-        return orderMapper.toOrderResponse(savedOrder);
+        // returnerar samma objekt
+        return orderResponse;
     }
 
 }
