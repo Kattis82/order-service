@@ -38,11 +38,11 @@ public class OrderService {
             CreateOrderRequest orderRequest,
             String bearerToken,
             String customerName) {
+        
 
-        // skickar produktlistan till ProductClient
-        // CreateOrderRequest innehåller List<ProductStockRequest>
-        // om något går fel (produkt saknas, stock räcker inte) kastas ett exception
-        // i ProductClient som stoppar hela flödet, ingen order sparas då
+        // skickar produktlistan till ProductService för lageruppdatering
+        // om en produkt saknas eller lagersaldot inte räcker kastas ett exception
+        // från ProductClient och ordern sparas inte
         List<ProductInfoResponse> products = productClient.decreaseStock(orderRequest.items(),
                 bearerToken);
 

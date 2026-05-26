@@ -27,5 +27,4 @@ public class OrderPublisher {
         rabbitTemplate.convertAndSend(queueName, orderResponse);
     }
 
-
 }
