@@ -53,6 +53,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/order-service:latest-dev
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/order-service:1.0.0
 
 
