@@ -16,6 +16,8 @@ public interface OrderMapper {
     // konverterar ProductInfo (svar från product-service) till OrderItem (entitet)
     // ignore = true på "order" eftersom det fältet inte finns i ProductInfo
     // och sätts manuellt i OrderService istället
+
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "order", ignore = true)
     OrderItem toOrderItem(ProductInfoResponse productInfoResponse);
 
