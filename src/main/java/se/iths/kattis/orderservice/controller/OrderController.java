@@ -1,5 +1,6 @@
 package se.iths.kattis.orderservice.controller;
 
+import com.stripe.exception.StripeException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -7,9 +8,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import se.iths.kattis.orderservice.dto.CheckoutSessionResponse;
 import se.iths.kattis.orderservice.dto.CreateOrderRequest;
+import se.iths.kattis.orderservice.dto.OrderCheckoutResponse;
 import se.iths.kattis.orderservice.dto.OrderResponse;
 import se.iths.kattis.orderservice.service.OrderService;
+import se.iths.kattis.orderservice.service.StripeCheckoutService;
 
 
 // controller som tar emot anrop för att skapa orders
@@ -20,6 +24,7 @@ import se.iths.kattis.orderservice.service.OrderService;
 public class OrderController {
 
     private final OrderService orderService;
+    private final StripeCheckoutService stripeCheckoutService;
 
     // tar emot en POST-request för att skapa en ny order
     // @Valid aktiverar valideringen på CreateOrderRequest
@@ -42,4 +47,38 @@ public class OrderController {
         // // 201 när ny resurs skapats
         return ResponseEntity.status(HttpStatus.CREATED).body(orderResponse);
     }
+
+    // skapar en Stripe Checkout Session för prototypen
+    @PostMapping("/checkout-session")
+    public ResponseEntity<CheckoutSessionResponse> createCheckoutSession()
+            throws StripeException {
+
+        CheckoutSessionResponse response =
+                stripeCheckoutService.createTestCheckoutSession();
+
+        return ResponseEntity.ok(response);
+    }
+
+    // ny metod (betalningslösning)
+    // skapar en order med status PENDING och startar Stripe Checkout
+    @PostMapping("/checkout")
+    public ResponseEntity<OrderCheckoutResponse> createCheckoutOrder(
+            @Valid @RequestBody CreateOrderRequest orderRequest,
+            @AuthenticationPrincipal Jwt jwt) throws StripeException {
+
+        // skickar JWT vidare så att Product Service kan autentisera anropet
+        String bearerToken = "Bearer " + jwt.getTokenValue();
+
+        // hämtar kundens e-postadress från JWT
+        String customerName = jwt.getSubject();
+
+        // skapar ordern och en tillhörande Stripe Checkout-session
+        OrderCheckoutResponse response = orderService.createCheckoutOrder(
+                orderRequest,
+                bearerToken,
+                customerName);
+
+        return ResponseEntity.ok(response);
+    }
+
 }
