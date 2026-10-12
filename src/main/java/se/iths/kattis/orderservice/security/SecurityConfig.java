@@ -27,11 +27,16 @@ public class SecurityConfig {
                 // ska släppas igenom innan JWT-kontrollen kollar token.
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin())
+                )
                 .authorizeHttpRequests(auth -> auth
                         // Swagger nås utan token
                         .requestMatchers(
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**").permitAll()
+                                "/v3/api-docs/**",
+                                "/webhooks/stripe",
+                                "/h2-console/**").permitAll()
                         // alla andra endpoints kräver att man är inloggad med JWT
                         .anyRequest().authenticated()
                 )

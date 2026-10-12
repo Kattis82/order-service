@@ -41,4 +41,13 @@ public class Order {
     // totalpriset för hela ordern, räknas ut i OrderService
     @Column(nullable = false)
     private BigDecimal totalPrice;
+
+    // betalningsstatus för ordern
+    @Enumerated(EnumType.STRING)
+    @Column
+    private PaymentStatus paymentStatus;
+
+    // Stripe Checkout Session som hör till ordern
+    @Column(unique = true) // så samma Stripe-session inte kan kopplas till flera ordrar
+    private String stripeSessionId;
 }

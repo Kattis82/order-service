@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
+import se.iths.kattis.orderservice.dto.ProductDetailsResponse;
 import se.iths.kattis.orderservice.dto.ProductInfoResponse;
 import se.iths.kattis.orderservice.dto.ProductStockRequest;
 
@@ -51,4 +52,28 @@ public class ProductClient {
         }
 
     }
+
+    // ny metod (betalningslösning)
+    // metoden anropar Product Services befintliga GET /products/{id}
+    // skickar med JWT-token på samma sätt som den befintliga metoden
+    // hämtar produktinformation utan att ändra lagersaldot
+    public ProductDetailsResponse getProductById(
+            Long productId,
+            String bearerToken) {
+
+        try {
+            return productRestClient.get()
+                    .uri("/products/{id}", productId)
+                    .header("Authorization", bearerToken)
+                    .retrieve()
+                    .body(ProductDetailsResponse.class);
+
+        } catch (RestClientResponseException exception) {
+            throw new ResponseStatusException(
+                    exception.getStatusCode(),
+                    "Fel från product-service: "
+                            + exception.getResponseBodyAsString());
+        }
+    }
+
 }
