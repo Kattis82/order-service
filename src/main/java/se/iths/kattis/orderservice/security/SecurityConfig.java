@@ -36,6 +36,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/webhooks/stripe",
+                                "/error",
                                 "/h2-console/**",
                                 "/health").permitAll()
                         // alla andra endpoints kräver att man är inloggad med JWT

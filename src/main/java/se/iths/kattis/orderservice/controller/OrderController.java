@@ -8,12 +8,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-import se.iths.kattis.orderservice.dto.CheckoutSessionResponse;
 import se.iths.kattis.orderservice.dto.CreateOrderRequest;
 import se.iths.kattis.orderservice.dto.OrderCheckoutResponse;
 import se.iths.kattis.orderservice.dto.OrderResponse;
 import se.iths.kattis.orderservice.service.OrderService;
 import se.iths.kattis.orderservice.service.StripeCheckoutService;
+
+import java.util.List;
 
 
 // controller som tar emot anrop för att skapa orders
@@ -48,16 +49,6 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderResponse);
     }
 
-    // skapar en Stripe Checkout Session för prototypen
-    @PostMapping("/checkout-session")
-    public ResponseEntity<CheckoutSessionResponse> createCheckoutSession()
-            throws StripeException {
-
-        CheckoutSessionResponse response =
-                stripeCheckoutService.createTestCheckoutSession();
-
-        return ResponseEntity.ok(response);
-    }
 
     // ny metod (betalningslösning)
     // skapar en order med status PENDING och startar Stripe Checkout
@@ -80,5 +71,23 @@ public class OrderController {
 
         return ResponseEntity.ok(response);
     }
+
+
+    // hämtar ordrarna för den inloggade kunden
+    @GetMapping
+    public ResponseEntity<List<OrderResponse>> getCustomerOrders(
+            @AuthenticationPrincipal Jwt jwt) {
+
+        // hämtar kundens mejladress från den validerade JWT-token
+        String customerName = jwt.getSubject();
+
+        // hämtar endast den inloggade kundens ordrar
+        List<OrderResponse> orders =
+                orderService.getCustomerOrders(customerName);
+
+        // returnerar ordrarna med HTTP 200 OK
+        return ResponseEntity.ok(orders);
+    }
+
 
 }
