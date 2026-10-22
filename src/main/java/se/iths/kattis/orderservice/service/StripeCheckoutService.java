@@ -6,7 +6,6 @@ import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import se.iths.kattis.orderservice.dto.CheckoutSessionResponse;
 import se.iths.kattis.orderservice.dto.OrderCheckoutResponse;
 import se.iths.kattis.orderservice.model.Order;
 import se.iths.kattis.orderservice.model.OrderItem;
@@ -25,57 +24,6 @@ public class StripeCheckoutService {
         this.stripeClient = new StripeClient(secretKey);
     }
 
-    // första prototypen med hårdkodad testprodukt
-    
-    // skapar en enkel Checkout Session med en testprodukt för 10 SEK
-    // används för att testa Stripe utan att koppla betalningen till en order
-    public CheckoutSessionResponse createTestCheckoutSession()
-            throws StripeException {
-
-        // FE-31-prototyp: en testprodukt för 10 SEK
-        // detta är inte kopplat till en riktig order ännu
-        // SessionCreateParams beskriver hur betalningen ska se ut, t ex produkter, priser och returadresser
-        SessionCreateParams params = SessionCreateParams.builder()
-                // PAYMENT betyder att kunden ska genomföra en betalning
-                .setMode(SessionCreateParams.Mode.PAYMENT)
-                // kunden skickas tillbaka till frontend efter lyckad
-                // betalning eller om betalningen avbryts
-                .setSuccessUrl("http://localhost:5173/")
-                .setCancelUrl("http://localhost:5173/")
-                // lägger till en testprodukt som kostar 10 SEK
-                // Stripe förväntar sig beloppet i öre: 10 SEK = 1000 öre
-                .addLineItem(
-                        SessionCreateParams.LineItem.builder()
-                                .setPriceData(
-                                        SessionCreateParams.LineItem.PriceData.builder()
-                                                .setCurrency("sek")
-                                                .setUnitAmount(1000L)
-                                                .setProductData(
-                                                        SessionCreateParams.LineItem.PriceData.ProductData
-                                                                .builder()
-                                                                .setName("FE-31 testprodukt")
-                                                                .build()
-                                                )
-                                                .build()
-                                )
-                                .setQuantity(1L)
-                                .build()
-                )
-                .build();
-
-        // skapar betalningssessionen hos Stripe
-        // att sessionen finns betyder inte att kunden har betalat
-        Session session = stripeClient.v1()
-                .checkout()
-                .sessions()
-                .create(params);
-
-        // returnerar sessionens ID och URL till anroparen
-        return new CheckoutSessionResponse(
-                session.getId(),
-                session.getUrl()
-        );
-    }
 
     // orderbaserade Stripe Checkout-prototypen, skapar en betalningssession
     // utifrån en sparad order med dess produkter, priser och antal
@@ -93,6 +41,10 @@ public class StripeCheckoutService {
                 SessionCreateParams.builder()
                         // anger att sessionen ska användas för betalning
                         .setMode(SessionCreateParams.Mode.PAYMENT)
+                        // checkout-sessionen löper ut efter 30 minuter
+                        .setExpiresAt(
+                                java.time.Instant.now().plusSeconds(1860).getEpochSecond()
+                        )
                         // Stripe skickar tillbaka kunden till frontend
                         // Session-ID:t läggs till efter lyckad betalning
                         .setSuccessUrl(
@@ -150,6 +102,27 @@ public class StripeCheckoutService {
                 session.getId(),
                 session.getUrl()
         );
+    }
+
+
+    // hämtar en befintlig Checkout-session från Stripe
+    public Session getCheckoutSession(String sessionId)
+            throws StripeException {
+
+        return stripeClient.v1()
+                .checkout()
+                .sessions()
+                .retrieve(sessionId);
+    }
+
+
+    // avslutar en öppen Checkout-session hos Stripe
+    public Session expireCheckoutSession(String sessionId)
+            throws StripeException {
+        return stripeClient.v1()
+                .checkout()
+                .sessions()
+                .expire(sessionId);
     }
 
 

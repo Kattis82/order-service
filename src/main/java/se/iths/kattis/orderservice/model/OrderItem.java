@@ -20,6 +20,11 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // sparar produktens ID från Product Service
+    // behövs för att kunna återställa lagret om betalningen uteblir
+    @Column(nullable = false)
+    private Long productId;
+
     // Snapshot av produktnamnet vid köptillfället
     @Column(nullable = false)
     private String name;  // kopierad från product-service

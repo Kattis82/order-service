@@ -1,5 +1,7 @@
 package se.iths.kattis.orderservice.dto;
 
+import se.iths.kattis.orderservice.model.PaymentStatus;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -13,7 +15,9 @@ public record OrderResponse(
         LocalDateTime orderDate,
         // items är de sparade orderraderna med produktinfo
         List<ProductInfoResponse> items,
-        BigDecimal totalPrice
+        BigDecimal totalPrice,
+        // betalningsstatus från ordern i databasen
+        PaymentStatus paymentStatus
 
 ) {
 }

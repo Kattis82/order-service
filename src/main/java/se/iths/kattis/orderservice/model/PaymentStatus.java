@@ -4,5 +4,6 @@ package se.iths.kattis.orderservice.model;
 // betalningsstatusen kan bara vara PENDING eller PAID
 public enum PaymentStatus {
     PENDING,
-    PAID
+    PAID,
+    EXPIRED
 }

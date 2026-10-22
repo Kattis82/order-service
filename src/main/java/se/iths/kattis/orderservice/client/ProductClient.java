@@ -1,6 +1,7 @@
 package se.iths.kattis.orderservice.client;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -21,6 +22,10 @@ public class ProductClient {
 
     // RestClient, konfigurerad med product-service bas-url i ClientConfig
     private final RestClient productRestClient;
+
+    // intern hemlighet för anrop till Product Service
+    @Value("${internal.service-token}")
+    private String internalServiceToken;
 
     // skickar en POST-request till product-service för att minska lagersaldot
     // tar emot en lista med ProductStockRequest (productId + quantity)
@@ -52,6 +57,35 @@ public class ProductClient {
         }
 
     }
+
+
+    // återställer lagersaldot i Product Service
+    // använder den interna hemligheten i stället för kundens JWT-token
+    public void restoreStock(List<ProductStockRequest> items) {
+        try {
+            // skickar ett POST-anrop till Product Services endpoint
+            // endpointen lägger tillbaka antalet produkter på lagret
+            productRestClient.post()
+                    .uri("/products/stock/restore")
+                    // skicka den interna hemligheten för autentisering
+                    .header("X-Internal-Service-Token", internalServiceToken)
+                    // skicka produkt-ID och antal som ska återställas
+                    .body(items)
+                    // skickar anropet och kontrollerar att svaret inte är ett fel
+                    // inget innehåll behövs tillbaka från Product Service
+                    .retrieve()
+                    .toBodilessEntity();
+
+        } catch (RestClientResponseException exception) {
+            // om Product Service svarar med ett fel, skickas det vidare
+            // HTTP-statusen och felmeddelandet till den som anropade Order Service
+            throw new ResponseStatusException(
+                    exception.getStatusCode(),
+                    "Kunde inte återställa lagersaldot: "
+                            + exception.getResponseBodyAsString());
+        }
+    }
+
 
     // ny metod (betalningslösning)
     // metoden anropar Product Services befintliga GET /products/{id}
