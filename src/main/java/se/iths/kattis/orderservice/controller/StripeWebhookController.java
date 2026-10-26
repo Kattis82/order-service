@@ -24,7 +24,7 @@ public class StripeWebhookController {
     public StripeWebhookController(
             @Value("${stripe.webhook-secret}") String webhookSecret,
             OrderService orderService) {
-        this.webhookSecret = webhookSecret;
+        this.webhookSecret = webhookSecret.replaceAll("\\s+", "");
         this.orderService = orderService;
     }
 

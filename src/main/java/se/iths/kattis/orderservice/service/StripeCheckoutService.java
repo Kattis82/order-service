@@ -21,7 +21,7 @@ public class StripeCheckoutService {
     public StripeCheckoutService(
 
             @Value("${stripe.secret-key}") String secretKey) {
-        this.stripeClient = new StripeClient(secretKey);
+        this.stripeClient = new StripeClient(secretKey.replaceAll("\\s+", ""));
     }
 
 
