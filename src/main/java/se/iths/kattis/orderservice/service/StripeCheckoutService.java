@@ -16,12 +16,16 @@ public class StripeCheckoutService {
     // kopplingen mellan Order Service och Stripe
     private final StripeClient stripeClient;
 
+    // frontendens adress, hämtad från application.properties
+    private final String frontendUrl;
+
     // hämtar Stripes hemliga API-nyckel från application.properties
     // och skapar en klient som kan kommunicera med Stripe
     public StripeCheckoutService(
 
-            @Value("${stripe.secret-key}") String secretKey) {
+            @Value("${stripe.secret-key}") String secretKey, @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.stripeClient = new StripeClient(secretKey.replaceAll("\\s+", ""));
+        this.frontendUrl = frontendUrl;
     }
 
 
@@ -48,11 +52,11 @@ public class StripeCheckoutService {
                         // Stripe skickar tillbaka kunden till frontend
                         // Session-ID:t läggs till efter lyckad betalning
                         .setSuccessUrl(
-                                "http://localhost:5173/checkout/success"
+                                frontendUrl + "/checkout/success"
                                         + "?session_id={CHECKOUT_SESSION_ID}")
                         // returadress om kunden avbryter betalningen
                         .setCancelUrl(
-                                "http://localhost:5173/checkout/cancel")
+                                frontendUrl + "/checkout/cancel")
                         // sparar orderns ID i Stripe-sessionens metadata
                         // webhooken kan senare använda det för att hitta ordern
                         .putMetadata("orderId", order.getId().toString());
