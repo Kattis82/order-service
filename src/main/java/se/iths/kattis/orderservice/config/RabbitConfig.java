@@ -9,8 +9,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-// konfigurerar RabbitMQ för order-service
-// skapar kön och ställer in JSON-konvertering
+
+/**
+ * Konfigurerar RabbitMQ för Order Service: skapar kön och ställer in JSON-konvertering.
+ */
 @Configuration
 public class RabbitConfig {
 
@@ -19,21 +21,36 @@ public class RabbitConfig {
     private String queueName;
 
 
-    // skapar kön i RabbitMQ om den inte redan finns
-    // true = kön överlever en omstart av RabbitMQ (durable)
+    /**
+     * Skapar kön för orderbekräftelser om den inte redan finns. Kön är varaktig
+     * och överlever en omstart av RabbitMQ.
+     *
+     * @return kön, med namn från {@code rabbitmq.queue.name}
+     */
+    // true = kön överlever en omstart
     @Bean
     public Queue orderQueue() {
         return new Queue(queueName, true);
     }
 
-    // konverterar mellan Java-objekt och JSON automatiskt
-    // behövs för att RabbitMQ ska kunna skicka OrderResponse som JSON
+
+    /**
+     * Konverterar mellan Java-objekt och JSON, så att {@code OrderResponse} kan skickas som JSON.
+     *
+     * @return JSON-konverteraren
+     */
     @Bean
     public MessageConverter messageConverter() {
         return new JacksonJsonMessageConverter();
     }
 
-    // konfigurerar RabbitTemplate med JSON-konverteraren
+
+    /**
+     * Skapar en {@link RabbitTemplate} som använder JSON-konverteraren.
+     *
+     * @param connectionFactory anslutningen till RabbitMQ
+     * @return konfigurerad RabbitTemplate
+     */
     // RabbitTemplate = Springs inbyggda klass för att skicka meddelanden till RabbitMQ
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {

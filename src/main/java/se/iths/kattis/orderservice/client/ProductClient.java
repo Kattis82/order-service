@@ -13,8 +13,11 @@ import se.iths.kattis.orderservice.dto.ProductStockRequest;
 
 import java.util.List;
 
-// klientklass, ansvarar för REST-anrop till product-service
-// ligger i order-service och är det enda stället som pratar med product-service
+
+/**
+ * Klient för REST-anrop till Product Service. Det enda stället i Order
+ * Service som pratar med Product Service.
+ */
 // @Component = Spring hanterar klassen som en bean
 @Component
 @RequiredArgsConstructor
@@ -27,10 +30,16 @@ public class ProductClient {
     @Value("${internal.service-token}")
     private String internalServiceToken;
 
-    // skickar en POST-request till product-service för att minska lagersaldot
-    // tar emot en lista med ProductStockRequest (productId + quantity)
-    // bearerToken skickas med som Authorization-header så product-service kan validera JWT
-    // returnerar en lista med ProductInfoResponse = en snapshot av varje produkt vid köptillfället
+
+    /**
+     * Minskar lagersaldot för en lista med produkter
+     *
+     * @param items       produkt-id och antal
+     * @param bearerToken kundens JWT, skickas som Authorization-header
+     * @return en lista med produktuppgifter vid köptillfället
+     * @throws org.springframework.web.server.ResponseStatusException med Product Services
+     *                                                                statuskod, till exempel 404 om produkten saknas eller 400 om lagret inte räcker
+     */
     public List<ProductInfoResponse> decreaseStock(List<ProductStockRequest> items,
                                                    String bearerToken) {
 
@@ -59,8 +68,13 @@ public class ProductClient {
     }
 
 
-    // återställer lagersaldot i Product Service
-    // använder den interna hemligheten i stället för kundens JWT-token
+    /**
+     * Återställer lagersaldot. Anropet autentiseras med den interna
+     * hemligheten i headern {@code X-Internal-Service-Token} i stället för kundens JWT.
+     *
+     * @param items produkt-id och antal som ska läggas tillbaka
+     * @throws org.springframework.web.server.ResponseStatusException om Product Service svarar med fel
+     */
     public void restoreStock(List<ProductStockRequest> items) {
         try {
             // skickar ett POST-anrop till Product Services endpoint
@@ -86,11 +100,14 @@ public class ProductClient {
         }
     }
 
-
-    // ny metod (betalningslösning)
-    // metoden anropar Product Services befintliga GET /products/{id}
-    // skickar med JWT-token på samma sätt som den befintliga metoden
-    // hämtar produktinformation utan att ändra lagersaldot
+    /**
+     * Hämtar information om en produkt utan att ändra lagersaldot.
+     *
+     * @param productId   produktens id
+     * @param bearerToken kundens JWT, skickas som Authorization-header
+     * @return produktens uppgifter
+     * @throws org.springframework.web.server.ResponseStatusException om Product Service svarar med fel
+     */
     public ProductDetailsResponse getProductById(
             Long productId,
             String bearerToken) {

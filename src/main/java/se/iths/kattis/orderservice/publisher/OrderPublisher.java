@@ -6,8 +6,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import se.iths.kattis.orderservice.dto.OrderResponse;
 
-// skickar orderbekräftelse till RabbitMQ-kön efter att en order skapats
-// email-service lyssnar på samma kö och skickar bekräftelsemail till kunden
+
+/**
+ * Skickar orderbekräftelser till RabbitMQ. Email Service lyssnar på samma kö
+ * och skickar bekräftelsemejl till kunden.
+ */
 @Component
 @RequiredArgsConstructor
 public class OrderPublisher {
@@ -21,8 +24,13 @@ public class OrderPublisher {
     private String queueName;
 
 
-    // skickar OrderResponse till kön som JSON
-    // OrderResponse innehåller customerName (mejladressen), orderDate, items och totalPrice
+    /**
+     * Skickar en orderbekräftelse som JSON till kön. Könamnet hämtas från
+     * {@code rabbitmq.queue.name} och måste vara detsamma i Email Service.
+     *
+     * @param orderResponse ordern som ska bekräftas, innehåller kundens e-postadress,
+     *                      orderdatum, orderrader och totalpris
+     */
     public void publishOrderConfirmation(OrderResponse orderResponse) {
         rabbitTemplate.convertAndSend(queueName, orderResponse);
     }

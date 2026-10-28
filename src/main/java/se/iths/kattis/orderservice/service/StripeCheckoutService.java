@@ -10,6 +10,9 @@ import se.iths.kattis.orderservice.dto.OrderCheckoutResponse;
 import se.iths.kattis.orderservice.model.Order;
 import se.iths.kattis.orderservice.model.OrderItem;
 
+/**
+ * Kommunicerar med Stripe för att skapa och hämta Checkout-sessioner.
+ */
 @Service
 public class StripeCheckoutService {
 
@@ -29,15 +32,16 @@ public class StripeCheckoutService {
     }
 
 
-    // orderbaserade Stripe Checkout-prototypen, skapar en betalningssession
-    // utifrån en sparad order med dess produkter, priser och antal
-
-    // metoden hämtar namn, pris och antal från orderns sparade produktrader
-    // omvandlar priset från kronor till öre, som Stripe förväntar sig för SEK
-    // skickar med orderId som metadata i Stripe-sessionen, så att man senare kan
-    // koppla betalningen till rätt order
-    // returnerar order-ID, session-ID och Checkout-URL
-    // metoden bekräftar inte att kunden har betalat
+    /**
+     * Skapar en Stripe Checkout-session för en order. Varje orderrad blir en artikel
+     * med pris i öre (SEK), och orderns id sparas som metadata så att webhooken kan
+     * koppla betalningen till ordern. Sessionen löper ut efter cirka 30 minuter.
+     * Metoden bekräftar inte att kunden har betalat.
+     *
+     * @param order ordern med sina orderrader
+     * @return order-id, session-id och betalningslänk
+     * @throws StripeException om Stripe nekar eller inte kan nås
+     */
     public OrderCheckoutResponse createCheckoutSession(Order order)
             throws StripeException {
 
@@ -109,7 +113,13 @@ public class StripeCheckoutService {
     }
 
 
-    // hämtar en befintlig Checkout-session från Stripe
+    /**
+     * Hämtar en befintlig Checkout-session från Stripe.
+     *
+     * @param sessionId Stripe-sessionens id
+     * @return sessionen
+     * @throws StripeException om sessionen inte kan hämtas
+     */
     public Session getCheckoutSession(String sessionId)
             throws StripeException {
 
@@ -120,7 +130,14 @@ public class StripeCheckoutService {
     }
 
 
-    // avslutar en öppen Checkout-session hos Stripe
+    /**
+     * Avslutar en öppen Checkout-session hos Stripe, så att kunden inte längre kan betala.
+     * Stripe skickar då händelsen {@code checkout.session.expired}.
+     *
+     * @param sessionId Stripe-sessionens id
+     * @return den avslutade sessionen
+     * @throws StripeException om sessionen inte kan avslutas, till exempel om den redan är slutförd
+     */
     public Session expireCheckoutSession(String sessionId)
             throws StripeException {
         return stripeClient.v1()

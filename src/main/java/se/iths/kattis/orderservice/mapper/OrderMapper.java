@@ -7,24 +7,42 @@ import se.iths.kattis.orderservice.dto.ProductInfoResponse;
 import se.iths.kattis.orderservice.model.Order;
 import se.iths.kattis.orderservice.model.OrderItem;
 
-// MapStruct-mapper genererar automatiskt kod för att konvertera mellan objekt
-// componentModel = "spring" gör att Spring hanterar mappern som en vanlig bean
-// så att den kan injiceras med @RequiredArgsConstructor eller @Autowired
+
+/**
+ * MapStruct-mapper som konverterar mellan entiteter och DTO:er för ordrar.
+ * Implementationen genereras vid bygget och hanteras av Spring som en bean.
+ */
 @Mapper(componentModel = "spring")
 public interface OrderMapper {
 
-    // konverterar ProductInfo (svar från product-service) till OrderItem (entitet)
+
+    /**
+     * Konverterar produktuppgifter från Product Service till en orderrad.
+     * Fälten {@code id} och {@code order} ignoreras, {@code order} sätts i OrderService.
+     *
+     * @param productInfoResponse produktens uppgifter vid köptillfället
+     * @return en orderrad som ännu inte är kopplad till någon order
+     */
     // ignore = true på "order" eftersom det fältet inte finns i ProductInfo
     // och sätts manuellt i OrderService istället
-
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "order", ignore = true)
     OrderItem toOrderItem(ProductInfoResponse productInfoResponse);
 
-    // mappar OrderItem till ProductInfoResponse för att kunna bygga OrderResponse
+    /**
+     * Konverterar en orderrad till produktuppgifter, som används när en OrderResponse byggs.
+     *
+     * @param orderItem orderraden
+     * @return orderradens produktuppgifter
+     */
     ProductInfoResponse toProductInfoResponse(OrderItem orderItem);
 
-    // konverterar Order (entitet) till OrderResponse (DTO ut)
+    /**
+     * Konverterar en order till det svar som skickas till frontend och till RabbitMQ.
+     *
+     * @param order ordern som ska konverteras
+     * @return ordern som OrderResponse
+     */
     // MapStruct hittar automatiskt matchande fält eftersom de heter likadant
     OrderResponse toOrderResponse(Order order);
 }

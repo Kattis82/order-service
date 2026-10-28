@@ -3,6 +3,9 @@ package se.iths.kattis.orderservice.dto;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
+/**
+ * Produkt-id och antal som ska minskas eller återställas i lagret.
+ */
 // DTO som beskriver en produkt i ordern
 // används både i CreateOrderRequest och skickas vidare till product-service
 // likadan record behöver finnas i product-service med identiska fält

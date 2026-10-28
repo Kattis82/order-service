@@ -6,10 +6,13 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
-// entitetsklass, representerar en orderrad i databasen
-// sparar en snapshot av produkten vid köptillfället
-// om produktens pris ändras senare påverkas inte gamla orders
 
+/**
+ * Entitet som representerar en orderrad i tabellen {@code order_items}.
+ * Raden sparar en kopia av produktens namn och pris vid köptillfället, så att
+ * senare prisändringar inte påverkar gamla ordrar. Produktens id sparas så att
+ * lagret kan återställas om betalningen uteblir.
+ */
 @Entity
 @Getter
 @Setter

@@ -7,6 +7,9 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 
+/**
+ * Begäran om att skapa en order: lista med produkter och antal.
+ */
 // DTO som representerar det som skickas in när en order skapas
 // record används eftersom den bara behöver bära data, inte ha logik
 // @Valid på listan gör att valideringen även körs på varje ProductStockRequest i listan

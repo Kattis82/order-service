@@ -2,6 +2,9 @@ package se.iths.kattis.orderservice.dto;
 
 import java.math.BigDecimal;
 
+/**
+ * Produktuppgifter från Product Service, används för att bygga orderrader.
+ */
 // DTO som order-service tar emot som svar från product-service
 // innehåller en snapshot av produktinformationen vid köptillfället
 // likadan record behöver finnas i product-service med identiska fält
