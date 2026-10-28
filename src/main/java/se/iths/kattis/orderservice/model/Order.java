@@ -11,8 +11,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-// entitetsklass, representerar en order i databasen
 
+/**
+ * Entitet som representerar en order i tabellen {@code orders}. En order tillhör en kund
+ * (identifierad med e-postadress från JWT), innehåller orderrader och har en betalningsstatus
+ * samt, vid Stripe-betalning, id för Checkout-sessionen.
+ */
 @Entity
 @Getter
 @Setter

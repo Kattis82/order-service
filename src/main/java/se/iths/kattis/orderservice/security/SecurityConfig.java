@@ -13,12 +13,25 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-// konfigurerar säkerheten för order-service
-// alla endpoints kräver JWT utom Swagger
+/**
+ * Konfigurerar säkerheten: JWT från Auth Server valideras och rollerna läses
+ * från claimet {@code roles}. Swagger, H2-konsolen, {@code /health},
+ * {@code /error} och {@code /webhooks/stripe} är öppna, övriga endpoints kräver inloggning.
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+
+    /**
+     * Bygger säkerhetskedjan: CORS kopplas in före JWT-kontrollen, CSRF är avstängt
+     * och endast de öppna endpoints som nämns i klassen kräver ingen inloggning.
+     *
+     * @param http                    används för att bygga säkerhetskedjan
+     * @param corsConfigurationSource CORS-reglerna som kopplas in före JWT-kontrollen
+     * @return säkerhetskedjan
+     * @throws Exception om kedjan inte kan byggas
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
@@ -51,6 +64,13 @@ public class SecurityConfig {
         return http.build();
     }
 
+
+    /**
+     * Läser rollerna från claimet {@code roles} i JWT. Prefixet sätts till tomt
+     * eftersom Auth Server redan lägger till {@code ROLE_}.
+     *
+     * @return konverterare från JWT till Spring Security-roller
+     */
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         // Talar om för Spring att rollerna ligger i roles-claimet
@@ -65,8 +85,13 @@ public class SecurityConfig {
         return converter;
     }
 
-    // metoden bygger reglerna för vilka webbadresser (origins) som får
-    // anropa order-service från en webbläsare och hur de får anropa den,
+
+    /**
+     * Bestämmer vilka frontend-adresser som får anropa Order Service från en webbläsare,
+     * vilka metoder som är tillåtna och att credentials får skickas med.
+     *
+     * @return CORS-konfigurationen för alla sökvägar
+     */
     // utan detta blockerar webbläsaren (inte servern) alla anrop från frontend,
     // eftersom frontend och order-service körs på olika portar (=olika "origin").
     @Bean

@@ -6,7 +6,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-
+/**
+ * Svar för en order: kund, datum, orderrader, totalpris och betalningsstatus.
+ */
 // DTO som order-service skickar tillbaka när en order skapats
 // returnerar aldrig entitetsklassen direkt
 public record OrderResponse(

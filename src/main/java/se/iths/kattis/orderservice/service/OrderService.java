@@ -20,6 +20,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Affärslogik för ordrar: skapa ordrar, starta betalning via Stripe,
+ * uppdatera orderstatus och hämta kundens orderhistorik.
+ */
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -36,10 +40,17 @@ public class OrderService {
     private final StripeCheckoutService stripeCheckoutService;
 
 
-    // metod som skapar en ny order
-    // orderRequest innehåller produktlistan man får in
-    // bearerToken skickas vidare till product-service för JWT-validering
-    // customerName är kundens mejladress hämtad från JWT
+    /**
+     * Skapar en order direkt, utan betalning. Lagret minskas i Product Service,
+     * ordern sparas och orderbekräftelsen publiceras till RabbitMQ.
+     *
+     * @param orderRequest produkter och antal
+     * @param bearerToken  kundens JWT, skickas vidare till Product Service
+     * @param customerName kundens e-postadress från JWT
+     * @return den sparade ordern
+     * @throws org.springframework.web.server.ResponseStatusException om Product Service
+     *                                                                nekar, till exempel när en produkt saknas eller lagret inte räcker
+     */
     public OrderResponse createOrder(
             CreateOrderRequest orderRequest,
             String bearerToken,
@@ -100,10 +111,21 @@ public class OrderService {
     }
 
 
-    // ny metod (betalningslösning) som skapar en order för Stripe-checkout
-    // metoden hämtar produktuppgifter och pris från Product Service, kontrollerar
-    // lagersaldot innan checkout skapas och sparar ordern som PENDING
-    // om ordern eller Stripe-sessionen inte kan skapas försöker vi återställa lagret
+    /**
+     * Skapar en order för Stripe-betalning. Priser hämtas från Product Service,
+     * lagret minskas och ordern sparas med status PENDING. Har kunden redan en
+     * öppen Checkout-session återanvänds den i stället för att lagret minskas igen.
+     * Om ordern eller Stripe-sessionen inte kan skapas återställs lagret.
+     *
+     * @param orderRequest produkter och antal
+     * @param bearerToken  kundens JWT, skickas vidare till Product Service
+     * @param customerName kundens e-postadress från JWT
+     * @return order-id, Stripe-session-id och betalningslänk
+     * @throws StripeException          vid fel i anrop till Stripe
+     * @throws IllegalArgumentException om lagersaldot inte räcker för en produkt
+     * @throws IllegalStateException    om kundens tidigare checkout redan är slutförd
+     * @throws RuntimeException         om ordern eller Stripe-sessionen inte kunde skapas
+     */
     public OrderCheckoutResponse createCheckoutOrder(
             CreateOrderRequest orderRequest,
             String bearerToken,
@@ -243,7 +265,15 @@ public class OrderService {
     }
 
 
-    // ny metod för betalningslösningen
+    /**
+     * Markerar en order som betald när Stripe har bekräftat betalningen och
+     * skickar orderbekräftelse via RabbitMQ. Ordern ändras bara om den är PENDING,
+     * så samma händelse kan tas emot flera gånger utan dubbel bekräftelse.
+     *
+     * @param orderId         orderns id
+     * @param stripeSessionId Stripe-sessionens id, måste tillhöra ordern
+     * @throws IllegalArgumentException om ordern inte finns eller sessionen inte matchar
+     */
     // en order som inte finns kan inte markeras som betald
     // en Stripe-session som inte hör till ordern avvisas
     // en redan betald order ändras inte igen och får ingen ny orderbekräftelse
@@ -277,8 +307,17 @@ public class OrderService {
         }
     }
 
-    // hanterar en Stripe Checkout-session som har löpt ut
-    // återställer lagret bara om ordern fortfarande väntar på betalning
+
+    /**
+     * Hanterar en utgången Stripe Checkout-session. Lagret återställs i Product
+     * Service och ordern markeras som EXPIRED, men bara om ordern fortfarande är
+     * PENDING. Misslyckas återställningen sparas inte ordern som EXPIRED.
+     *
+     * @param orderId         orderns id
+     * @param stripeSessionId Stripe-sessionens id, måste tillhöra ordern
+     * @throws IllegalArgumentException                               om ordern inte finns eller sessionen inte matchar
+     * @throws org.springframework.web.server.ResponseStatusException om lagret inte kan återställas
+     */
     @Transactional
     public void expirePendingOrder(Long orderId, String stripeSessionId) {
 
@@ -317,7 +356,12 @@ public class OrderService {
     }
 
 
-    // hämtar den inloggade kundens ordrar, med den senaste ordern först
+    /**
+     * Hämtar en kunds ordrar, med den senaste först.
+     *
+     * @param customerName kundens e-postadress
+     * @return kundens ordrar som OrderResponse
+     */
     public List<OrderResponse> getCustomerOrders(String customerName) {
 
         // hämtar endast ordrar som tillhör kunden
@@ -331,8 +375,12 @@ public class OrderService {
     }
 
 
-    // körs varje minut och rensar ordrar som fortfarande väntar på betalning
-    // trots att Checkout-sessionen borde ha löpt ut (t ex missad webhook)
+    /**
+     * Körs varje minut och rensar ordrar som fortfarande väntar på betalning trots att
+     * Checkout-sessionen borde ha gått ut, till exempel när en webhook har missats.
+     * Betalda sessioner markeras som betalda, öppna sessioner avslutas hos Stripe och
+     * lagret återställs. Fel för en order stoppar inte övriga.
+     */
     @Scheduled(fixedDelay = 60000)
     public void cleanUpStalePendingOrders() {
         LocalDateTime cutoff = LocalDateTime.now().minusMinutes(35);

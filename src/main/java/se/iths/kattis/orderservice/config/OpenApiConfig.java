@@ -8,11 +8,20 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-// Konfigurerar Swagger så att man kan autentisera med JWT-token
-// och testa skyddade endpoints direkt i Swagger-UI
+
+/**
+ * Konfigurerar Swagger så att man kan autentisera med JWT-token
+ * och testa skyddade endpoints direkt i Swagger UI.
+ */
 @Configuration
 public class OpenApiConfig {
 
+    /**
+     * Skapar API-dokumentationen med titel och version, och anger att
+     * endpoints kräver en Bearer-token (JWT).
+     *
+     * @return OpenAPI-konfigurationen
+     */
     @Bean
     public OpenAPI openAPI() {
         String schemeName = "bearerAuth";

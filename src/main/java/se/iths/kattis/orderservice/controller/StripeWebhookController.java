@@ -11,8 +11,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import se.iths.kattis.orderservice.service.OrderService;
 
+/**
+ * Tar emot webhooks från Stripe på {@code /webhooks/stripe}.
+ * Endpointen är öppen för JWT-kontrollen men skyddas av att Stripes
+ * signatur verifieras. Den ska inte gå via Gateway eftersom signaturen
+ * beräknas på den orörda request-bodyn.
+ */
 @RestController
-// alla anrop till denna controller börjar med /webhooks/stripe
 @RequestMapping("/webhooks/stripe")
 public class StripeWebhookController {
 
@@ -28,6 +33,17 @@ public class StripeWebhookController {
         this.orderService = orderService;
     }
 
+    /**
+     * Verifierar Stripes signatur och hanterar händelserna
+     * {@code checkout.session.completed} (ordern markeras som betald) och
+     * {@code checkout.session.expired} (lagret återställs och ordern markeras som utgången).
+     * Övriga händelser kvitteras utan åtgärd.
+     *
+     * @param payload   den orörda request-bodyn från Stripe
+     * @param signature värdet i headern {@code Stripe-Signature}
+     * @return 200 när händelsen har hanterats eller ignorerats, 400 om signaturen
+     * eller innehållet är ogiltigt
+     */
     // tar emot webhook-anrop från Stripe
     @PostMapping
     public ResponseEntity<String> handleStripeWebhook(
